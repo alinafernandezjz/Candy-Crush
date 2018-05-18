@@ -1,0 +1,318 @@
+<html>
+    <head>
+        <title>Candy Crush by Alina</title>
+        <script src="js/jquery-1.10.2.min.js"></script>
+        <style>
+            html *{
+                font-family: 'Verdana';
+            }
+            table tr td{
+                border: 3px solid gray;
+                width: 45px;
+                height: 45px;
+                background-color: #FFA7AF;
+                background-repeat: no-repeat;
+                
+                cursor: pointer;
+            }
+            td.green{
+                background-image: url(img/green.png);
+                background-repeat: no-repeat;
+                background-size: 39px 39px;
+                background-position: 3px 3px;
+            }
+             td.orange{
+                background-image: url(img/orange.png);
+                background-repeat: no-repeat;
+                background-size: 39px 39px;
+                background-position: 3px 3px;
+
+            } 
+             td.red{
+                background-image: url(img/red.png);
+                background-repeat: no-repeat;
+                background-size: 39px 39px;
+                background-position: 2px 2px;
+            } 
+            td.purple{
+                background-image: url(img/purple.png);
+                background-repeat: no-repeat;
+                background-size: 39px 39px;
+                background-position: 3px 3px;
+            } 
+            td.yellow{
+                background-image: url(img/yellow.png);
+                background-repeat: no-repeat;
+                background-size: 39px 39px;
+                background-position: 3px 3px;
+            } 
+            td.seleccionada{
+                background-color: #FFC932;
+            }          
+              
+        </style>
+        <script>
+            var width=9;
+            var height=9;
+
+            var fila1=-1;
+            var fila2=-1;
+            var col1=-1;
+            var col2=-1;
+            var puntos=0;
+            
+            //Esta función suma los puntos
+            function agregarPuntos(cuantos){
+                puntos+=cuantos;
+                $("div#puntaje span").html(puntos);
+            }
+            //Esta función sirve básicamente para que no queden celdas vacías al tronarse los dulces
+            function dropAndPlay(){
+                var yaTermine=false;
+                //Este ciclo se corre mientras haya celdas vacías
+                while(!yaTermine){
+                    var sinDulce=$("td.empty:last");
+                    if(sinDulce.length==0){
+                        yaTermine=true;
+                    }
+                    else{
+                        //Le atribuimos valores a las variables f (fila) y c (columna)
+                        var f=sinDulce.attr("data-fila");
+                        var c=sinDulce.attr("data-col");
+                        var encontreDulce=false;
+                        for(var i=f-1;i>=0;i--){
+                            //Si no tiene nada la celda, le agregamos el dulcecito
+                            if(!$("td[data-fila="+i+"][data-col="+c+"]").hasClass("empty")){
+                                $("td[data-fila="+f+"][data-col="+c+"]").removeClass().addClass(
+                                    $("td[data-fila="+i+"][data-col="+c+"]").attr("data-color")
+                                ).attr("data-color",
+                                    $("td[data-fila="+i+"][data-col="+c+"]").attr("data-color")
+                                );
+                                $("td[data-fila="+i+"][data-col="+c+"]").removeClass().addClass("empty");
+                                //Esto solo se lo agregamos para que tardaran un poco en tronarse los dulces y no se viera tan rápido
+                                for(var noSeDebe=0;noSeDebe<9999;noSeDebe++){
+                                    var sientoPena=noSeDebe;
+                                }
+                                
+                                var color=$("td[data-fila="+f+"][data-col="+c+"]").attr("data-color");
+                                if(contarHorizontal(color,f,c,false)>2){
+                                    agregarPuntos(contarHorizontal(color,f,c,true));//indicamos que sume puntos cuando los dulces truenen
+                                }
+                                if(contarVertical(color,f,c,false)>2){
+                                    contarVertical(color,f,c,true);
+                                }
+                                encontreDulce=true;
+                                break;//hace que termine la ejecución una vez que encuentra el dulce en la celda
+                            }
+                        }
+                        //si no hay dulce le coloca uno
+                        if(!encontreDulce){
+                            $("td[data-fila="+f+"][data-col="+c+"]").removeClass();
+                            colocarDulce(f,c);
+                        }
+                    }
+                }
+            }
+            //Esta función nos ayuda a intercambiar los dulces y que se rompan cuando encuentre tres o más del mismo tipo
+            function swapAndPlay(){
+                if(fila1==fila2 && col1==col2){
+                    return false;
+                }
+                
+                else{
+                    if(
+                        (fila1==fila2 && col1!==col2 && Math.abs(col1-col2)<2) ||//Si más de dos dulces son iguales y están juntos en una fila o columna
+                        (col1==col2 && fila1!==fila2 && Math.abs(fila1-fila2)<2)
+                        ){
+                        //Verifica si los dulces son del mismo color
+                        var color1=$("td[data-fila="+fila1+"][data-col="+col1+"]").attr("data-color");
+                        var color2=$("td[data-fila="+fila2+"][data-col="+col2+"]").attr("data-color");
+                        
+                        $("td[data-fila="+fila1+"][data-col="+col1+"]")
+                            .removeClass()
+                            .addClass("seleccionada")//La clase "seleccionada" se la atribuímos a los dulces que les demos click
+                            .addClass(color2);
+                        $("td[data-fila="+fila2+"][data-col="+col2+"]")
+                            .removeClass()
+                            .addClass("seleccionada")
+                            .addClass(color1);
+                            
+                        var seRompio=false;//Esta variable es para verificar si los dulces se truenan al hacer el swap
+                        if(contarHorizontal(color2,fila1,col1,false)>2){
+                            seRompio=true;
+                            agregarPuntos(contarHorizontal(color2,fila1,col1,true));
+                        }
+                        if(contarVertical(color2,fila1,col1,false)>2){
+                            seRompio=true;
+                            agregarPuntos(contarVertical(color2,fila1,col1,true));
+                        }
+                        if(contarHorizontal(color1,fila2,col2,false)>2){
+                            seRompio=true;
+                            agregarPuntos(contarHorizontal(color1,fila2,col2,true));
+                        }
+                        if(contarVertical(color1,fila2,col2,false)>2){
+                            seRompio=true;
+                            agregarPuntos(contarVertical(color1,fila2,col2,true));
+                        }
+                        if(!seRompio){ //Cuando los dulces se pueden romper
+                            $("td[data-fila="+fila1+"][data-col="+col1+"]")
+                                .removeClass()
+                                .addClass(color1);
+                            $("td[data-fila="+fila2+"][data-col="+col2+"]")
+                                .removeClass()
+                                .addClass(color2);
+                        }
+                        else{ //Si no se pueden romper, no se hace el cambio y se desseleccionan automaticamente
+                            $("td").removeClass("seleccionada");
+                            dropAndPlay();
+                        }
+                        fila1=col1=fila2=col2=-1;
+                    }
+                    
+                }
+            }
+            //Esta función es para contar y agregar la clase "empty" cuando ya no haya dulces en la celda debido a que fueron tronados (horizontalmente)
+            function contarHorizontal(color,fila,columna,laMuerteAlada){
+                var contador=1;
+                var izquierda=true;
+                var derecha=true;
+                if(laMuerteAlada){
+                    $("td[data-fila="+fila+"][data-col="+columna+"]").removeClass().addClass("empty");
+                }
+                while(izquierda){
+                    columna--;
+                    if($("td[data-fila="+fila+"][data-col="+columna+"]").hasClass(color)){
+                        if(laMuerteAlada){
+                            $("td[data-fila="+fila+"][data-col="+columna+"]").removeClass().addClass("empty");
+                        }
+                        contador++; //El contador aumenta cuando desaparecen los dulces
+                    }
+                    else{
+                        izquierda=false;
+                    }
+                }
+                columna+=contador;
+                while(derecha){
+                columna++;
+                    if($("td[data-fila="+fila+"][data-col="+columna+"]").hasClass(color)){
+                        if(laMuerteAlada){
+                            $("td[data-fila="+fila+"][data-col="+columna+"]").removeClass().addClass("empty");
+                        }
+                        contador++;
+                    }
+                    else{
+                        derecha=false;
+                    }
+                }
+                return contador;
+            }
+            //Esta es para contar verticalmente
+            function contarVertical(color,fila,columna,diosDeLaDestruccion){
+                var contador=1;
+                var arriba=true;
+                var abajo=true;
+                if(diosDeLaDestruccion){
+                    $("td[data-fila="+fila+"][data-col="+columna+"]").removeClass().addClass("empty");
+                }
+                while(arriba){
+                    fila--;
+                    if($("td[data-fila="+fila+"][data-col="+columna+"]").hasClass(color)){
+                        if(diosDeLaDestruccion){
+                            $("td[data-fila="+fila+"][data-col="+columna+"]").removeClass().addClass("empty");
+                        }
+                        contador++;
+                    }
+                    else{
+                        arriba=false;
+                    }
+                }
+                fila+=contador;
+                while(abajo){
+                    fila++;
+                    if($("td[data-fila="+fila+"][data-col="+columna+"]").hasClass(color)){
+                        if(diosDeLaDestruccion){
+                            $("td[data-fila="+fila+"][data-col="+columna+"]").removeClass().addClass("empty");
+                       } 
+                        contador++;
+                    }
+                    else{
+                        abajo=false;
+                    }
+                }
+                return contador;
+            }
+            //Esta función es para poner los dulces en las celdas
+            function colocarDulce(fila,columna){
+            
+                var yaLoPuse=false;
+                while(!yaLoPuse){
+                
+                    var numero = Math.floor(Math.random()*5);
+                    var color="";
+                    //Aquí le asignamos números a cada color
+                    if(numero==0){
+                        color="green";
+                    }
+                    else if(numero==1){
+                        color="red";
+                    }
+                    else if(numero==2){
+                        color="yellow";
+                    }
+                    else if(numero==3){
+                        color="orange";
+                    }
+                    else if(numero==4){
+                        color="purple";
+                    }
+                    //Aquí nos aseguramos que no haya más de dos dulces del mismo color juntos, para que se acomoden en el tablero de tal forma que no haya combinaciones ya hechas
+                    var horizontal=contarHorizontal(color,fila,columna,false);
+                    var vertical=contarVertical(color,fila,columna,false);
+                    if(horizontal<3&&vertical<3){
+                        $("td[data-fila="+fila+"][data-col="+columna+"]").addClass(color).attr("data-color",color);
+                        yaLoPuse=true;
+                    }
+                }
+            }
+            $(document).ready(function(){//(Hasta que se cargue la página)
+                var celdita=$("table tr td");//Asignamos valores a las celdas (hacemos referencia a la tabla)
+                for(var i=1; i<width; i++){
+                    celdita.clone().attr("data-col",i).appendTo("table tr");
+                }
+                var filita=$("table tr");
+                for(i=1; i<height; i++){
+                    var clon=filita.clone();//La variable clon, hace una copia de los elementos seleccionados, en este caso hace referencia a la tabla
+                    clon.find("td").attr("data-fila",i);
+                    clon.appendTo("table");
+                }
+                for(i=0; i<height; i++){
+                    for(var j=0; j<width; j++){
+                        colocarDulce(i,j);//Usamos las cordenadas (i,j) para referirnos a que coloque el dulce en una celda de la tabla
+                    }
+                }
+                
+                $("td").click(function(){
+                    $(this).addClass("seleccionada");
+                    $("td[data-fila="+fila1+"][data-col="+col1+"]").removeClass("seleccionada");
+                    fila1=fila2;
+                    col1=col2;
+                    fila2=$(this).attr("data-fila");//guardamos los datos en data fila y columna
+                    col2=$(this).attr("data-col");
+                    swapAndPlay(); //Hacemos referencia a la función que se encarga de intercambiar los dulces
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td data-fila="0" data-col="0" data-color="0">&nbsp;</td>
+
+            </tr>
+                                                         
+        </table>
+        <div id="puntaje">
+            Puntos: <span>0</span>
+        </div>
+    </body>
+</html>
